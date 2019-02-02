@@ -47,7 +47,7 @@ class MPL3115A2:
     MPL3115_OFFSET_T = const(0x2c)
     MPL3115_OFFSET_H = const(0x2d)
 
-    def __init__(self, sda=Pin(21), scl=Pin(22), mode=PRESSURE):
+    def __init__(self, sda=Pin(4), scl=Pin(5), mode=PRESSURE):
 
         self.i2c = I2C(scl=scl, sda=sda, freq=100000)
         self.STA_reg = bytearray(1)
