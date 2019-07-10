@@ -1,17 +1,13 @@
-
-
 import time
 from machine import I2C, Pin
-
-ALTITUDE = const(0)
-PRESSURE = const(1)
-
 
 class MPL3115A2exception(Exception):
     pass
 
-
 class MPL3115A2:
+    ALTITUDE = const(0)
+    PRESSURE = const(1)
+
     MPL3115_I2CADDR = const(0x60)
     MPL3115_STATUS = const(0x00)
     MPL3115_PRESSURE_DATA_MSB = const(0x01)
@@ -47,9 +43,9 @@ class MPL3115A2:
     MPL3115_OFFSET_T = const(0x2c)
     MPL3115_OFFSET_H = const(0x2d)
 
-    def __init__(self, sda=Pin(21), scl=Pin(22), mode=PRESSURE):
+    def __init__(self, i2c, mode=PRESSURE):
 
-        self.i2c = I2C(scl=scl, sda=sda, freq=100000)
+        self.i2c = i2c
         self.STA_reg = bytearray(1)
         self.mode = mode
 
