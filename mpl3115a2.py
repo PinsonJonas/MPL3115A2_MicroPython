@@ -90,28 +90,23 @@ class MPL3115A2:
         if self.mode == ALTITUDE:
             raise MPL3115A2exception("Incorrect Measurement Mode MPL3115A2")
 
-        OUT_P_MSB = self.i2c.readfrom_mem(
-            MPL3115_I2CADDR, MPL3115_PRESSURE_DATA_MSB, 1)
-        OUT_P_CSB = self.i2c.readfrom_mem(
-            MPL3115_I2CADDR, MPL3115_PRESSURE_DATA_CSB, 1)
-        OUT_P_LSB = self.i2c.readfrom_mem(
-            MPL3115_I2CADDR, MPL3115_PRESSURE_DATA_LSB, 1)
+        out_pressure = self.i2c.readfrom_mem(
+            MPL3115_I2CADDR, MPL3115_PRESSURE_DATA_MSB, 3)
 
-        return float((OUT_P_MSB[0] << 10) + (OUT_P_CSB[0] << 2) + ((OUT_P_LSB[0] >> 6) & 0x03) + ((OUT_P_LSB[0] >> 4) & 0x03) / 4.0)
+        pressure_int = (out_pressure[0] << 10) + (out_pressure[1] << 2) + ((out_pressure[2] >> 6) & 0x3)
+        pressure_frac = (out_pressure[2] >> 4) & 0x03
+
+        return float(pressure_int + pressure_frac / 4.0)
 
     def altitude(self):
         if self.mode == PRESSURE:
             raise MPL3115A2exception("Incorrect Measurement Mode MPL3115A2")
 
-        OUT_P_MSB = self.i2c.readfrom_mem(
-            MPL3115_I2CADDR, MPL3115_PRESSURE_DATA_MSB, 1)
-        OUT_P_CSB = self.i2c.readfrom_mem(
-            MPL3115_I2CADDR, MPL3115_PRESSURE_DATA_CSB, 1)
-        OUT_P_LSB = self.i2c.readfrom_mem(
-            MPL3115_I2CADDR, MPL3115_PRESSURE_DATA_LSB, 1)
+        out_alt = self.i2c.readfrom_mem(
+            MPL3115_I2CADDR, MPL3115_PRESSURE_DATA_MSB, 3)
 
-        alt_int = (OUT_P_MSB[0] << 8) + (OUT_P_CSB[0])
-        alt_frac = ((OUT_P_LSB[0] >> 4) & 0x0F)
+        alt_int = (out_alt[0] << 8) + (out_alt[1])
+        alt_frac = ((out_alt[2] >> 4) & 0x0F)
 
         if alt_int > 32767:
             alt_int -= 65536
