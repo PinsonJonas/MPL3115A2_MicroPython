@@ -1,17 +1,13 @@
-
-
 import time
 from machine import I2C, Pin
-
-ALTITUDE = const(0)
-PRESSURE = const(1)
-
 
 class MPL3115A2exception(Exception):
     pass
 
-
 class MPL3115A2:
+    ALTITUDE = const(0)
+    PRESSURE = const(1)
+
     MPL3115_I2CADDR = const(0x60)
     MPL3115_STATUS = const(0x00)
     MPL3115_PRESSURE_DATA_MSB = const(0x01)
@@ -47,9 +43,9 @@ class MPL3115A2:
     MPL3115_OFFSET_T = const(0x2c)
     MPL3115_OFFSET_H = const(0x2d)
 
-    def __init__(self, sda=Pin(21), scl=Pin(22), mode=PRESSURE):
+    def __init__(self, i2c, mode=PRESSURE):
 
-        self.i2c = I2C(scl=scl, sda=sda, freq=100000)
+        self.i2c = i2c
         self.STA_reg = bytearray(1)
         self.mode = mode
 
@@ -94,28 +90,23 @@ class MPL3115A2:
         if self.mode == ALTITUDE:
             raise MPL3115A2exception("Incorrect Measurement Mode MPL3115A2")
 
-        OUT_P_MSB = self.i2c.readfrom_mem(
-            MPL3115_I2CADDR, MPL3115_PRESSURE_DATA_MSB, 1)
-        OUT_P_CSB = self.i2c.readfrom_mem(
-            MPL3115_I2CADDR, MPL3115_PRESSURE_DATA_CSB, 1)
-        OUT_P_LSB = self.i2c.readfrom_mem(
-            MPL3115_I2CADDR, MPL3115_PRESSURE_DATA_LSB, 1)
+        out_pressure = self.i2c.readfrom_mem(
+            MPL3115_I2CADDR, MPL3115_PRESSURE_DATA_MSB, 3)
 
-        return float((OUT_P_MSB[0] << 10) + (OUT_P_CSB[0] << 2) + ((OUT_P_LSB[0] >> 6) & 0x03) + ((OUT_P_LSB[0] >> 4) & 0x03) / 4.0)
+        pressure_int = (out_pressure[0] << 10) + (out_pressure[1] << 2) + ((out_pressure[2] >> 6) & 0x3)
+        pressure_frac = (out_pressure[2] >> 4) & 0x03
+
+        return float(pressure_int + pressure_frac / 4.0)
 
     def altitude(self):
         if self.mode == PRESSURE:
             raise MPL3115A2exception("Incorrect Measurement Mode MPL3115A2")
 
-        OUT_P_MSB = self.i2c.readfrom_mem(
-            MPL3115_I2CADDR, MPL3115_PRESSURE_DATA_MSB, 1)
-        OUT_P_CSB = self.i2c.readfrom_mem(
-            MPL3115_I2CADDR, MPL3115_PRESSURE_DATA_CSB, 1)
-        OUT_P_LSB = self.i2c.readfrom_mem(
-            MPL3115_I2CADDR, MPL3115_PRESSURE_DATA_LSB, 1)
+        out_alt = self.i2c.readfrom_mem(
+            MPL3115_I2CADDR, MPL3115_PRESSURE_DATA_MSB, 3)
 
-        alt_int = (OUT_P_MSB[0] << 8) + (OUT_P_CSB[0])
-        alt_frac = ((OUT_P_LSB[0] >> 4) & 0x0F)
+        alt_int = (out_alt[0] << 8) + (out_alt[1])
+        alt_frac = ((out_alt[2] >> 4) & 0x0F)
 
         if alt_int > 32767:
             alt_int -= 65536
